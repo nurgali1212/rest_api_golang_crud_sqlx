@@ -1,17 +1,21 @@
 package model
 
-import (
-	"database/sql"
-	"time"
-)
-
-type Todo struct {
-	ID          int          ` db:"id" json:"id"`
-	Description string       ` db:"description" json:"description"`
-	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
-	CompletedAt sql.NullTime `db:"completed_at" json:"completed_at"`
+type Book struct {
+	Id         uint   `json:"id" db:"id"`
+	Title      string `json:"title" db:"title"`
+	Author     string `json:"author" db:"author"`
+	CategoryId int    `json:"category_id" db:"category_id"`
 }
 
-type UpdateListInput struct {
-	Description *string `json:"description"`
+type Category struct {
+	Id    uint   `json:"id"`
+	Genre string `json:"genre"`
+}
+
+type UpdateBookInput struct {
+	Title  *string `json:"title"`
+	Author *string `json:"author"`
+}
+type UpdateCategoryinput struct {
+	Genre	*string	`json:"genre"`
 }

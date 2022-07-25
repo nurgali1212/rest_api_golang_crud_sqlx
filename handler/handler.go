@@ -1,33 +1,40 @@
 package handler
 
 import (
-	"test_project/service"
+	"rest_api_golang_crud_sqlx/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	services *service.Service
+	service *service.Service
 }
 
-func NewHandler(services *service.Service) *Handler {
-	return &Handler{services: services}
+func NewHandler(service *service.Service) *Handler {
+	return &Handler{service: service}
 }
 
-func (h *Handler) InitRoutes() *gin.Engine {
+func (h *Handler) SetupRouter() *gin.Engine {
 	router := gin.Default()
 
-	todo := router.Group("/")
+	book := router.Group("/")
+	category := router.Group(("/"))
 	{
-		todo.GET("todos", h.getAllLists)
-		todo.POST("todo", h.createList)
-		todo.GET("todo/:id", h.getListById)
-		todo.DELETE("todo/:id", h.deleteList)
-		todo.PUT("todo/:id", h.updateList)
+		//BOOK
+		book.POST("book", h.createBookH)
+		book.GET("books", h.getAllBookH)
+		book.GET("book/:id", h.getBookByIdH)
+		book.DELETE("book/:id", h.deleteBookH)
+		book.PUT("book/:id", h.updateBookH)
+
+		//CATEGORY
+		category.GET("categories", h.getAllCategoryH)
+		category.POST("category", h.CreateCategoryH)
+		category.GET("category/:id", h.getCategoryByIdH)
+		category.PUT("category/:id", h.updateCategoryH)
+		category.DELETE("category/:id", h.deleteBookH)
+
 	}
+
 	return router
 }
-type UpdateListInput struct {
-	Description *string `json:"description"`
-}
-

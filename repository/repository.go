@@ -2,89 +2,104 @@ package repository
 
 import (
 	"fmt"
-	"strings"
-	"test_project/model"
-
-	"github.com/jmoiron/sqlx"
+	"rest_api_golang_crud_sqlx/database"
+	"rest_api_golang_crud_sqlx/model"
 )
 
-type TodoList interface {
-	GetAll() ([]model.Todo, error)
-	GetListById(id string) (model.Todo, error)
-	UpdateList(listId int, input model.UpdateListInput) error
-	DeleteList(id string) error
-	CreateList(input model.Todo) (model.Todo, error)
+type BookList interface {
+	GetAllBook() ([]model.Book, error)
+	CreateBook(book model.Book) (model.Book, error)
+	GetByIdBook(bookId string) (model.Book, error)
+	DeleteBook(bookId string) error
+	UpdateBook(input model.Book) error
 }
 
+type CategoryList interface {
+	GetAllCategoryRepo() ([]model.Category, error)
+	CreateCategoryRepo(category model.Category) (model.Category, error)
+	GetByIdCategoryRepo(categoryId string) (model.Category, error)
+	DeleteCategoryRepo(categoryId string) error
+	UpdateCategoryRepo(input model.Category) error
+}
+
+type CreateBookInput struct {
+	Title      string `json:"title"`
+	Author     string `json:"author" `
+	CategoryID uint   `json:"category_id"`
+}
 type Repository struct {
-	TodoList
+	db *database.DB
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *database.DB) *Repository {
 	return &Repository{
-		TodoList: NewTodoListPostgres(db),
+		db: db,
 	}
 }
 
-type TodoListPostgres struct {
-	db *sqlx.DB
+// CATEGORY GET
+func (r *Repository) GetAllCategoryRepo() (category []model.Category, err error) {
+	return category, r.db.Conn.Select(&category, "SELECT * FROM category ORDER BY id")
+
 }
 
-func NewTodoListPostgres(db *sqlx.DB) *TodoListPostgres {
-	return &TodoListPostgres{db: db}
-}
-func (r *TodoListPostgres) GetAll() ([]model.Todo, error) {
-	var lists []model.Todo
-	query := fmt.Sprintln("SELECT * FROM todos ORDER BY id")
-	err := r.db.Select(&lists, query)
-	return lists, err
-}
-func (r *TodoListPostgres) GetListById(id string) (model.Todo, error) {
-	var list model.Todo
-	query := fmt.Sprintln("SELECT * FROM todos where id=$1")
-	err := r.db.Get(&list, query, id)
-	return list, err
-}
-func (r *TodoListPostgres) UpdateList(listId int, input model.UpdateListInput) error {
-	setValues := make([]string, 0)
-	args := make([]interface{}, 0)
-	argId := 1
+//POST CATEGORY
+func (r *Repository) CreateCategoryRepo(category model.Category) (model.Category, error) {
+	fmt.Println(category)
+	_, err := r.db.Conn.Exec("INSERT INTO category(genre) VALUES($1)", category.Genre)
 
-	if input.Description != nil {
-		setValues = append(setValues, fmt.Sprintf("description=$%d", argId))
-		args = append(args, *input.Description)
-		argId++
-	}
-
-	setQuery := strings.Join(setValues, ", ")
-
-	query := fmt.Sprintf("UPDATE todos SET %s,completed_at=NOW()  WHERE id=$%d", setQuery, argId)
-	args = append(args, listId)
-
-	_, err := r.db.Exec(query, args...)
-	return err
-}
-
-func (r *TodoListPostgres) DeleteList(id string) error {
-
-	_, err := r.db.Exec("Delete from todos  where id= $1", id)
-	return err
-}
-
-func (r *TodoListPostgres) CreateList(input model.Todo) (model.Todo, error) {
-	var id string
-	var outErr model.Todo
-	query := "insert into todos (description,created_at) values ($1,Now()) returning id"
-
-	row := r.db.QueryRow(query, input.Description)
-	if err := row.Scan(&id); err != nil {
-		fmt.Println("Error in row.Scan")
-		return outErr, err
-	}
-	output, err := r.GetListById(string(id))
 	if err != nil {
-		fmt.Println("Error in the GetListById")
-		return outErr, err
+		return category, err
 	}
-	return output, err
+	return category, nil
+}
+//GET ID CATEGORY
+func (r *Repository) GetByIdCategoryRepo(categoryId string) (category model.Category, err error) {
+	return category, r.db.Conn.Get(&category, "SELECT * FROM category WHERE id = $1 ORDER BY id", categoryId)
+}
+//PUT CATEGORY
+func (r *Repository) UpdateCategory(input model.Category) (err error) {
+	_, err = r.db.Conn.NamedExec("UPDATE category SET genre=:genre WHERE id=:id", input)
+
+	return
+}
+
+//DELETE CATEGORY
+func (r *Repository) DeleteCategoryRepo(categoryId string) (err error) {
+	_, err = r.db.Conn.Exec("DELETE FROM category WHERE id=$1;", categoryId)
+	return
+}
+
+
+//GET BOOK
+func (r *Repository) GetAllBook() (books []model.Book, err error) {
+	return books, r.db.Conn.Select(&books, "SELECT * FROM book ORDER BY id")
+
+}
+//GET ID BOOK
+func (r *Repository) GetByIdBook(bookId string) (book model.Book, err error) {
+	return book, r.db.Conn.Get(&book, "SELECT * FROM book WHERE id = $1 ORDER BY id", bookId)
+}
+
+//POST BOOK
+func (r *Repository) CreateBook(book model.Book) (model.Book, error) {
+	fmt.Println(book)
+	_, err := r.db.Conn.Exec("INSERT INTO book(title, author, category_id) VALUES($1, $2, $3)", book.Title, book.Author, book.CategoryId)
+
+	if err != nil {
+		return book, err
+	}
+	return book, nil
+}
+//DELETE BOOK
+func (r *Repository) DeleteBook(bookId string) (err error) {
+	_, err = r.db.Conn.Exec("DELETE FROM book WHERE id=$1;", bookId)
+	return
+}
+//PUT BOOK
+
+func (r *Repository) UpdateBook(input model.Book) (err error) {
+	_, err = r.db.Conn.NamedExec("UPDATE book SET title=:title, author=:author WHERE id=:id", input)
+
+	return
 }
